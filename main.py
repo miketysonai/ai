@@ -6,6 +6,8 @@ from datetime import datetime
 from typing import Optional, Tuple
 from groq import Groq
 import tweepy
+import requests
+from bs4 import BeautifulSoup
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -66,6 +68,7 @@ class TysonBot:
         
         # Initialize Groq client
         self.groq = Groq(api_key=GROQ_API_KEY)
+        self.tweet_count = 0  # Track the number of tweets posted
 
     def generate_prompt(self) -> str:
         """Generate a random prompt for Mike to respond to"""
@@ -177,12 +180,33 @@ class TysonBot:
             logger.error(f"Error posting tweet: {e}")
             return False
 
+    def scrape_fight_updates(self) -> Optional[str]:
+        """Scrape fight updates from CBS Sports"""
+        try:
+            response = requests.get("https://www.cbssports.com/boxing/news/mike-tyson-vs-jake-paul-fight-results-live-boxing-updates-netflix-ppv-scorecard-start-time-undercard/live/")
+            soup = BeautifulSoup(response.content, 'html.parser')
+            # Assuming the updates are in a specific HTML element, adjust the selector as needed
+            updates = soup.find_all('div', class_='update')  # Example class, adjust as necessary
+            if updates:
+                return updates[0].get_text(strip=True)  # Get the latest update
+        except Exception as e:
+            logger.error(f"Error scraping fight updates: {e}")
+        return None
+
     def run_bot(self):
         """Main loop to run the bot"""
         while True:
             try:
                 # Generate and post tweet
-                prompt = self.generate_prompt()
+                if self.tweet_count % 2 == 0:  # Every second tweet
+                    update = self.scrape_fight_updates()
+                    if update:
+                        prompt = f"Hey Mike, what do you think about this update: {update}?"
+                    else:
+                        prompt = self.generate_prompt()  # Fallback to regular prompt
+                else:
+                    prompt = self.generate_prompt()
+                
                 response = self.get_tyson_response(prompt)
                 cleaned_response = self.clean_response(response)
                 
@@ -190,6 +214,7 @@ class TysonBot:
                     success = self.post_tweet(cleaned_response)
                     if success:
                         logger.info("Successfully posted tweet using Groq")
+                        self.tweet_count += 1  # Increment tweet count
                     
                 # Wait 10 minutes
                 logger.info("Waiting 10 minutes until next tweet...")
