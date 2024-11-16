@@ -1,6 +1,6 @@
-# Tyson Discord Bot
+# Tyson X Bot
 
-A Twitter bot that generates humorous and philosophical X posts in the style of Mike Tyson, focusing on topics related to Jake Paul and boxing. The bot utilizes the Groq API for generating responses and sends them to a specified Discord webhook.
+A X bot that generates humorous and philosophical X posts in the style of Mike Tyson, focusing on topics related to Jake Paul and boxing. The bot utilizes the Groq API for generating responses and sends them to a specified Discord webhook.
 
 ## Features
 
